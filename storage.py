@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 # The project root is the folder containing main.py.
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 # Store saved tickets in the project's data folder.
 DEFAULT_DATA_FILE = PROJECT_ROOT / "data" / "tickets.json"
