@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from campusflow.storage import load_tickets, save_tickets
+from storage import load_tickets, save_tickets
 
 
 class TestTicketStorage(unittest.TestCase):
