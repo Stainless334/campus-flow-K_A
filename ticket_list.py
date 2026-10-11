@@ -1,7 +1,4 @@
-tickets = []
-
-categories = ["Network", "Hardware", "Software", "Other"]
-urgency_levels = ["low", "medium", "high"]
+from ticket_creation import tickets
 
 
 def list_tickets():
