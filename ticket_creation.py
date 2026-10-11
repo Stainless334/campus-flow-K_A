@@ -1,4 +1,6 @@
-tickets = []
+from storage import load_tickets, save_tickets
+
+tickets = load_tickets()
 
 categories = ["Network", "Hardware", "Software", "Other"]
 urgency_levels = ["low", "medium", "high"]
@@ -26,7 +28,6 @@ def calculate_priority(urgency, affected_users):
 
 
 def add():
-
     while True:
         title = input("Enter the problem title: ").strip()
         if title:
@@ -36,7 +37,6 @@ def add():
     while True:
         print("Categories: Network, Hardware, Software, Other")
         category = input("Enter the category: ").strip().title()
-
         if category in categories:
             break
         print("Please enter a valid category.")
@@ -44,22 +44,17 @@ def add():
     while True:
         print("Urgency levels: low, medium, high")
         urgency = input("Enter the urgency: ").strip().lower()
-
         if urgency in urgency_levels:
             break
         print("Please enter low, medium, or high.")
 
     while True:
         user_input = input("Enter the number of affected users: ").strip()
-
         try:
             affected_users = int(user_input)
-
             if affected_users > 0:
                 break
-
             print("The number of affected users must be positive.")
-
         except ValueError:
             print("Enter a positive whole number.")
 
@@ -73,14 +68,16 @@ def add():
         "affected_users": affected_users,
         "priority": priority,
         "status": "open",
-        "assigned_to": None
+        "assigned_to": None,
     }
 
     tickets.append(ticket)
+    save_tickets(tickets)
 
     print(f"\nTicket {ticket['id']} created successfully!")
     print(f"Priority: {ticket['priority']}")
     print(f"Status: {ticket['status']}")
 
+
 if __name__ == "__main__":
-    add(),
+    add()

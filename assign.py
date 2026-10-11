@@ -1,5 +1,8 @@
-
 from ticket_list import find_ticket
+from ticket_creation import tickets
+from storage import save_tickets
+
+
 def assign_ticket():
     print("\n ASSIGN TICKET ")
 
@@ -21,6 +24,6 @@ def assign_ticket():
         return
 
     ticket["assigned_to"] = staff_name
+    save_tickets(tickets)
 
     print(f"Ticket {ticket['id']} assigned to {staff_name}.")
-
