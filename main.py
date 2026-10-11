@@ -1,8 +1,42 @@
-from ticket_creation import add
+import workflow
+from ticket_creation import add, tickets
 from ticket_list import list_tickets, view_ticket
 from assign import assign_ticket
 from report import print_report
-from storage import load_tickets
+from storage import save_tickets
+
+
+def change_status_menu():
+    ticket_id = input("Enter the ticket ID: ").strip().upper()
+    new_status = input("New status (open/in_progress/resolved): ")
+    try:
+        ticket = workflow.change_ticket_status(tickets, ticket_id, new_status)
+        save_tickets(tickets)
+        print(f"Ticket {ticket['id']} is now {ticket['status']}.")
+    except ValueError as error:
+        print(f"Error: {error}")
+
+
+def reopen_menu():
+    ticket_id = input("Enter the ticket ID: ").strip().upper()
+    try:
+        workflow.reopen_ticket(tickets, ticket_id)
+        save_tickets(tickets)
+        print(f"Ticket {ticket_id} reopened.")
+    except ValueError as error:
+        print(f"Error: {error}")
+
+
+def queue_menu():
+    queue = workflow.get_unresolved_queue(tickets)
+    if not queue:
+        print("No unresolved tickets.")
+        return
+    for ticket in queue:
+        print(
+            f"{ticket['id']} | {ticket['priority']} | "
+            f"{ticket['status']} | {ticket['title']}"
+        )
 
 
 def main():
@@ -14,7 +48,10 @@ _______ CAMPUSFLOW _______
     3. View One Ticket
     4. Assign Ticket
     5. Print Report
-    6. Exit""")
+    6. Change Ticket Status
+    7. Reopen Ticket
+    8. Unresolved Queue
+    9. Exit""")
 
         choice = input("Choose an option: ").strip()
 
@@ -27,13 +64,18 @@ _______ CAMPUSFLOW _______
         elif choice == "4":
             assign_ticket()
         elif choice == "5":
-            tickets = load_tickets()
             print_report(tickets)
         elif choice == "6":
+            change_status_menu()
+        elif choice == "7":
+            reopen_menu()
+        elif choice == "8":
+            queue_menu()
+        elif choice == "9":
             print("Goodbye.")
             break
         else:
-            print("Invalid choice. Please select 1-6.")
+            print("Invalid choice. Please select 1-9.")
 
 
 if __name__ == "__main__":
