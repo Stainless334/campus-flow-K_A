@@ -1,9 +1,6 @@
 from django.db import models
 
 
-from django.db import models
-
-
 class Ticket(models.Model):
     CATEGORY_CHOICES = [
         ("Network", "Network"),
