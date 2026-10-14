@@ -4,6 +4,7 @@ from ticket_list import list_tickets, view_ticket
 from assign import assign_ticket
 from report import print_report
 from storage import save_tickets
+from knowledge_lab import run_engineering_knowledge_lab
 
 
 def change_status_menu():
@@ -51,7 +52,8 @@ _______ CAMPUSFLOW _______
     6. Change Ticket Status
     7. Reopen Ticket
     8. Unresolved Queue
-    9. Exit""")
+    9. Engineering Knowledge Lab
+    0. Exit""")
 
         choice = input("Choose an option: ").strip()
 
@@ -72,10 +74,12 @@ _______ CAMPUSFLOW _______
         elif choice == "8":
             queue_menu()
         elif choice == "9":
+            run_engineering_knowledge_lab()
+        elif choice == "0":
             print("Goodbye.")
             break
         else:
-            print("Invalid choice. Please select 1-9.")
+            print("Invalid choice. Please select 0-9.")
 
 
 if __name__ == "__main__":
