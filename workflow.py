@@ -1,7 +1,10 @@
-
 """
 CampusFlow ticket assignment and status management.
 """
+
+from datetime import datetime, timezone
+
+from sla import calculate_due_at
 
 
 VALID_STATUSES = ("open", "in_progress", "resolved")
@@ -43,6 +46,7 @@ def change_ticket_status(tickets, ticket_id, new_status):
         open -> in_progress -> resolved
 
     A resolved ticket must be explicitly reopened before further changes.
+    SLA fields are never modified here.
     """
 
     ticket = find_ticket(tickets, ticket_id)
@@ -87,13 +91,17 @@ def change_ticket_status(tickets, ticket_id, new_status):
     )
 
 
-def reopen_ticket(tickets, ticket_id):
+def reopen_ticket(tickets, ticket_id, now=None, events=None, actor="system"):
     """
-    Explicitly reopen a resolved ticket.
+    Explicitly reopen a resolved ticket and start a new SLA cycle.
 
-    Reopening returns it to open status. It must be assigned again
-    if a staff member is to start working on it.
+    creation_time is kept. sla_start becomes now and deadline is
+    recalculated from the ticket's priority. The ticket must be
+    assigned again before work can start.
     """
+
+    if now is None:
+        now = datetime.now(timezone.utc).replace(microsecond=0)
 
     ticket = find_ticket(tickets, ticket_id)
 
@@ -102,14 +110,21 @@ def reopen_ticket(tickets, ticket_id):
             "Only resolved tickets can be reopened."
         )
 
+    # Everything that can fail runs before the first change to the ticket.
+    new_deadline = calculate_due_at(ticket["priority"], now).isoformat()
+    
+
     ticket["status"] = "open"
     ticket["assigned_to"] = None
+    ticket["sla_start"] = now.isoformat()
+    ticket["deadline"] = new_deadline
 
+   
     return ticket
+
 
 def get_unresolved_queue(tickets):
     """
-
     Return unresolved tickets in priority order.
 
     Priority order:
@@ -141,9 +156,7 @@ def get_unresolved_queue(tickets):
 
         if (
             isinstance(ticket_id, str)
-
             and ticket_id.startswith("T")
-
             and ticket_id[1:].isdigit()
         ):
             numeric_id = int(ticket_id[1:])

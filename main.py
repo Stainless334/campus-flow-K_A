@@ -1,9 +1,12 @@
+from datetime import datetime, timezone
+
 import workflow
 from ticket_creation import add, tickets
 from ticket_list import list_tickets, view_ticket
 from assign import assign_ticket
 from report import print_report
-from storage import save_tickets
+from storage import save_tickets, load_events, save_events
+from sla import escalate_overdue
 
 
 def change_status_menu():
@@ -39,10 +42,29 @@ def queue_menu():
         )
 
 
+def escalate_menu():
+    events = load_events()
+    now = datetime.now(timezone.utc)  # the real clock is read only here
+
+    try:
+        new_events = escalate_overdue(tickets, events, now, "system")
+    except ValueError as error:
+        print(f"Escalation aborted, nothing was changed: {error}")
+        return
+
+    if not new_events:
+        print("No new overdue tickets to escalate.")
+        return
+
+    save_events(events)
+    for event in new_events:
+        print(f"Escalated {event['ticket_id']}")
+
+
 def main():
     while True:
         print("""
-_______ CAMPUSFLOW _______
+_______ CAMPUSFLOW PRO _______
     1. Create Ticket
     2. List All Tickets
     3. View One Ticket
@@ -51,7 +73,8 @@ _______ CAMPUSFLOW _______
     6. Change Ticket Status
     7. Reopen Ticket
     8. Unresolved Queue
-    9. Exit""")
+    9. Escalate Overdue Tickets
+    0. Exit""")
 
         choice = input("Choose an option: ").strip()
 
@@ -72,10 +95,12 @@ _______ CAMPUSFLOW _______
         elif choice == "8":
             queue_menu()
         elif choice == "9":
+            escalate_menu()
+        elif choice == "0":
             print("Goodbye.")
             break
         else:
-            print("Invalid choice. Please select 1-9.")
+            print("Invalid choice. Please select 0-10.")
 
 
 if __name__ == "__main__":
