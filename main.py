@@ -7,27 +7,76 @@ from assign import assign_ticket
 from report import print_report
 from storage import save_tickets, load_events, save_events
 from sla import escalate_overdue
+from history import record_event, print_history
+from knowledge_lab import run_engineering_knowledge_lab
+
+
+STATUS_TO_EVENT = {"in_progress": "START", "resolved": "RESOLVE"}
+
+
+def find_ticket(ticket_id):
+    for ticket in tickets:
+        if ticket.get("id") == ticket_id:
+            return ticket
+    return None
 
 
 def change_status_menu():
     ticket_id = input("Enter the ticket ID: ").strip().upper()
-    new_status = input("New status (open/in_progress/resolved): ")
+    new_status = input("New status (open/in_progress/resolved): ").strip()
+
+    existing = find_ticket(ticket_id)
+    before = existing["status"] if existing else None
+
     try:
         ticket = workflow.change_ticket_status(tickets, ticket_id, new_status)
-        save_tickets(tickets)
-        print(f"Ticket {ticket['id']} is now {ticket['status']}.")
     except ValueError as error:
         print(f"Error: {error}")
+        return  # rejected: no event, nothing saved
+
+    event_type = STATUS_TO_EVENT.get(ticket["status"])
+    if event_type:
+        events = load_events()
+        record_event(
+            events,
+            ticket["id"],
+            event_type,
+            "user",
+            datetime.now(timezone.utc),
+            before,
+            ticket["status"],
+        )
+        save_events(events)
+
+    save_tickets(tickets)
+    print(f"Ticket {ticket['id']} is now {ticket['status']}.")
 
 
 def reopen_menu():
     ticket_id = input("Enter the ticket ID: ").strip().upper()
+
+    existing = find_ticket(ticket_id)
+    before = existing["status"] if existing else None
+
     try:
         workflow.reopen_ticket(tickets, ticket_id)
-        save_tickets(tickets)
-        print(f"Ticket {ticket_id} reopened.")
     except ValueError as error:
         print(f"Error: {error}")
+        return  # rejected: no event, nothing saved
+
+    events = load_events()
+    record_event(
+        events,
+        ticket_id,
+        "REOPEN",
+        "user",
+        datetime.now(timezone.utc),
+        before,
+        "open",
+    )
+    save_events(events)
+    save_tickets(tickets)
+    print(f"Ticket {ticket_id} reopened.")
 
 
 def queue_menu():
@@ -61,6 +110,15 @@ def escalate_menu():
         print(f"Escalated {event['ticket_id']}")
 
 
+def history_menu():
+    ticket_id = input("Enter the ticket ID: ").strip().upper()
+    if not ticket_id:
+        print("Error: ticket ID is required.")
+        return
+    events = load_events()
+    print_history(events, ticket_id)
+
+
 def main():
     while True:
         print("""
@@ -74,6 +132,8 @@ _______ CAMPUSFLOW PRO _______
     7. Reopen Ticket
     8. Unresolved Queue
     9. Escalate Overdue Tickets
+    10. View Ticket History
+    11. Engineering Knowledge Lab
     0. Exit""")
 
         choice = input("Choose an option: ").strip()
@@ -96,6 +156,10 @@ _______ CAMPUSFLOW PRO _______
             queue_menu()
         elif choice == "9":
             escalate_menu()
+        elif choice == "10":
+            history_menu()
+        elif choice == "11":
+            run_engineering_knowledge_lab()
         elif choice == "0":
             print("Goodbye.")
             break
