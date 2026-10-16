@@ -6,9 +6,10 @@ from ticket_list import list_tickets, view_ticket
 from assign import assign_ticket
 from report import print_report
 from storage import save_tickets, load_events, save_events
-from sla import escalate_overdue
+from sla import escalate_overdue, is_overdue
 from history import record_event, print_history
 from knowledge_lab import run_engineering_knowledge_lab
+from queues import get_sla_attention_queue, calculate_metrics
 
 
 STATUS_TO_EVENT = {"in_progress": "START", "resolved": "RESOLVE"}
@@ -110,6 +111,7 @@ def escalate_menu():
     already = overdue_total - len(new_events)
     print(f"Newly escalated: {len(new_events)} | Already escalated: {already}")
 
+
 def history_menu():
     ticket_id = input("Enter the ticket ID: ").strip().upper()
     if not ticket_id:
@@ -117,6 +119,35 @@ def history_menu():
         return
     events = load_events()
     print_history(events, ticket_id)
+
+
+def sla_queue_menu():
+    now = datetime.now(timezone.utc)
+    try:
+        queue = get_sla_attention_queue(tickets, now)
+    except ValueError as error:
+        print(f"Error: {error}")
+        return
+    if not queue:
+        print("No unresolved tickets.")
+        return
+    for ticket in queue:
+        flag = "OVERDUE" if is_overdue(ticket, now) else "on time"
+        print(
+            f"{ticket['id']} | {flag} | due {ticket['deadline']} | "
+            f"{ticket['priority']} | {ticket['title']}"
+        )
+
+
+def metrics_menu():
+    now = datetime.now(timezone.utc)
+    try:
+        metrics = calculate_metrics(tickets, load_events(), now)
+    except ValueError as error:
+        print(f"Error: {error}")
+        return
+    for name, value in metrics.items():
+        print(f"{name}: {value}")
 
 
 def main():
@@ -134,6 +165,8 @@ _______ CAMPUSFLOW PRO _______
     9. Escalate Overdue Tickets
     10. View Ticket History
     11. Engineering Knowledge Lab
+    12. SLA Attention Queue
+    13. Metrics
     0. Exit""")
 
         choice = input("Choose an option: ").strip()
@@ -160,11 +193,15 @@ _______ CAMPUSFLOW PRO _______
             history_menu()
         elif choice == "11":
             run_engineering_knowledge_lab()
+        elif choice == "12":
+            sla_queue_menu()
+        elif choice == "13":
+            metrics_menu()
         elif choice == "0":
-            print("Goodbye.")
+            print("THANKS FOR USING CAMPUSFLOW PRO-VERSION 👍👍👍")
             break
         else:
-            print("Invalid choice. Please select 0-10.")
+            print("Invalid choice. Please select 0-13.")
 
 
 if __name__ == "__main__":
