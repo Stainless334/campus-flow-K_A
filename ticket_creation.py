@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 
 from sla import calculate_due_at
-from storage import load_tickets, save_tickets
+from storage import load_tickets, save_tickets, load_events, save_events
+from history import record_event
+from queues import confirm_duplicates
 
 
 tickets = load_tickets()
@@ -82,10 +84,30 @@ def add():
         except ValueError:
             print("Enter a positive whole number.")
 
-    ticket = build_ticket(title, category, urgency, affected_users)
+    # Duplicate warning: warn and ask, never block automatically.
+    if not confirm_duplicates(category, title, tickets, input_fn=input):
+        print("Ticket creation cancelled. Nothing was created.")
+        return
+
+    now = datetime.now(timezone.utc)
+    ticket = build_ticket(title, category, urgency, affected_users, now)
+
+    # Record the CREATE event only after the ticket was built successfully.
+    events = load_events()
+    record_event(
+        events,
+        ticket["id"],
+        "CREATE",
+        "user",
+        now,
+        None,
+        "open",
+        {"priority": ticket["priority"]},
+    )
 
     tickets.append(ticket)
     save_tickets(tickets)
+    save_events(events)
 
     print(f"\nTicket {ticket['id']} created successfully!")
     print(f"Priority: {ticket['priority']}")
