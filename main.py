@@ -97,18 +97,18 @@ def escalate_menu():
 
     try:
         new_events = escalate_overdue(tickets, events, now, "system")
+        overdue_total = sum(1 for t in tickets if is_overdue(t, now))
     except ValueError as error:
         print(f"Escalation aborted, nothing was changed: {error}")
         return
 
-    if not new_events:
-        print("No new overdue tickets to escalate.")
-        return
+    if new_events:
+        save_events(events)
+        for event in new_events:
+            print(f"Escalated {event['ticket_id']}")
 
-    save_events(events)
-    for event in new_events:
-        print(f"Escalated {event['ticket_id']}")
-
+    already = overdue_total - len(new_events)
+    print(f"Newly escalated: {len(new_events)} | Already escalated: {already}")
 
 def history_menu():
     ticket_id = input("Enter the ticket ID: ").strip().upper()

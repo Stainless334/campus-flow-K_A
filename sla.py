@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-
+from history import record_event
 
 
 sla_duration = {
@@ -46,7 +46,19 @@ def is_overdue(ticket, now=None):
     return now > deadline
 
 
+def has_escalated_this_cycle(events, ticket):
+    """True if an ESCALATE event already exists for this ticket's SLA cycle."""
+    for event in events:
+        if (event.get("ticket_id") == ticket.get("id")
+                and event.get("action") == "ESCALATE"
+                and event.get("details", {}).get("sla_start")
+                == ticket.get("sla_start")):
+            return True
+    return False
+
+
 def escalate_overdue(tickets, events, now, actor):
+    scratch = list(events)  # work on a copy so a failure changes nothing
     new_events = []
 
     for ticket in tickets:
@@ -57,7 +69,20 @@ def escalate_overdue(tickets, events, now, actor):
         if not cycle_start:
             raise ValueError(f"Ticket {ticket.get('id')} is missing sla_start.")
 
-       
+        if has_escalated_this_cycle(scratch, ticket):
+            continue  # already escalated in this cycle
 
-    events.extend(new_events)  
+        record_event(
+            scratch,
+            ticket["id"],
+            "ESCALATE",
+            actor,
+            now,
+            ticket["status"],
+            ticket["status"],
+            {"sla_start": cycle_start},
+        )
+        new_events.append(scratch[-1])
+
+    events.extend(new_events)  # only reached if every ticket succeeded
     return new_events
