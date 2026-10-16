@@ -58,7 +58,7 @@ def has_escalated_this_cycle(events, ticket):
 
 
 def escalate_overdue(tickets, events, now, actor):
-    scratch = list(events)  # work on a copy so a failure changes nothing
+    scratch = list(events)
     new_events = []
 
     for ticket in tickets:

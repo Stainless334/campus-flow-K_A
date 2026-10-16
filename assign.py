@@ -20,7 +20,7 @@ def assign_ticket():
         print("This ticket is closed. Reopen ticket before assigning.")
         return
 
-    staff_name = input("Enter the staff member's name: ").strip()
+    staff_name = input("Enter the staff member's name: ").strip().title()
 
     if not staff_name:
         print("Invalid Input: Staff member's name cannot be blank.")

@@ -84,7 +84,6 @@ def add():
         except ValueError:
             print("Enter a positive whole number.")
 
-    # Duplicate warning: warn and ask, never block automatically.
     if not confirm_duplicates(category, title, tickets, input_fn=input):
         print("Ticket creation cancelled. Nothing was created.")
         return
@@ -92,7 +91,6 @@ def add():
     now = datetime.now(timezone.utc)
     ticket = build_ticket(title, category, urgency, affected_users, now)
 
-    # Record the CREATE event only after the ticket was built successfully.
     events = load_events()
     record_event(
         events,
